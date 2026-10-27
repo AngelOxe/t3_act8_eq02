@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getProducts, getCategories } from "../services/productService";
+import { getProducts, getCategories, createProduct } from "../services/productService";
 import ProductFilters from "../components/products/ProductFilters";
 import ProductTable from "../components/products/ProductTable";
 import Pagination, { LIMIT_OPTIONS } from "../components/products/Pagination";
+import ProductFormModal from "../components/products/ProductFormModal";
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,6 +20,13 @@ export default function Products() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Estado del CRUD
+  const [localCreated, setLocalCreated] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [message, setMessage] = useState("");
 
   // Actualiza la URL; al cambiar filtros o límite vuelve a la página 1
   const updateParams = (changes) => {
@@ -58,9 +66,67 @@ export default function Products() {
     return () => controller.abort();
   }, [page, limit, search, category]);
 
+  // El mensaje de éxito desaparece solo a los 3 segundos
+  useEffect(() => {
+    if (!message) return;
+    const id = setTimeout(() => setMessage(""), 3000);
+    return () => clearTimeout(id);
+  }, [message]);
+
+  // POST real y después se refleja en el estado local
+  const handleCreateProduct = async (formData) => {
+    setSaving(true);
+    setActionError("");
+    try {
+      const response = await createProduct(formData);
+      const newProduct = {
+        ...formData,
+        ...response,
+        id: Date.now(), // DummyJSON devuelve siempre el mismo id
+        thumbnail: "",
+        rating: 0,
+        isLocal: true,
+      };
+      setLocalCreated((prev) => [newProduct, ...prev]);
+      setShowForm(false);
+      setMessage("Producto agregado correctamente");
+    } catch (err) {
+      setActionError(err.message || "No se pudo agregar el producto");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Los productos agregados se muestran arriba de la página 1,
+  // respetando el filtro de texto y de categoría activos
+  const visibleCreated =
+    page === 1
+      ? localCreated.filter(
+          (p) =>
+            (!category || p.category === category) &&
+            p.title.toLowerCase().includes(search.trim().toLowerCase())
+        )
+      : [];
+  const rows = [...visibleCreated, ...products];
+
   return (
     <section className="space-y-4 p-6">
-      <h1 className="text-2xl font-bold text-slate-800">Productos</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-slate-800">Productos</h1>
+        <button
+          onClick={() => {
+            setActionError("");
+            setShowForm(true);
+          }}
+          className="rounded-lg bg-sky-600 px-4 py-2 text-sm text-white hover:bg-sky-700"
+        >
+          + Agregar producto
+        </button>
+      </div>
+
+      {message && (
+        <p className="rounded-lg bg-green-50 p-3 text-sm text-green-700">{message}</p>
+      )}
 
       <ProductFilters
         search={search}
@@ -75,7 +141,7 @@ export default function Products() {
         <p className="rounded-lg bg-red-50 p-4 text-red-700">{error}</p>
       )}
 
-      {!loading && !error && <ProductTable products={products} />}
+      {!loading && !error && <ProductTable products={rows} />}
 
       <Pagination
         page={page}
@@ -83,6 +149,17 @@ export default function Products() {
         total={total}
         onPageChange={(p) => updateParams({ page: p })}
         onLimitChange={(l) => updateParams({ limit: l })}
+      />
+
+      <ProductFormModal
+        open={showForm}
+        title="Agregar producto"
+        categories={categories}
+        submitText="Agregar"
+        loading={saving}
+        error={actionError}
+        onSubmit={handleCreateProduct}
+        onCancel={() => setShowForm(false)}
       />
     </section>
   );
