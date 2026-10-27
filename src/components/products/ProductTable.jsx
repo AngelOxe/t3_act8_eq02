@@ -1,4 +1,4 @@
-export default function ProductTable({ products, onEdit }) {
+export default function ProductTable({ products, onEdit, onDelete }) {
   if (products.length === 0) {
     return (
       <p className="rounded-lg border border-slate-200 bg-white p-6 text-center text-slate-500">
@@ -43,12 +43,20 @@ export default function ProductTable({ products, onEdit }) {
               <td className="px-4 py-2">{p.stock}</td>
               <td className="px-4 py-2">{p.rating}</td>
               <td className="px-4 py-2">
-                <button
-                  onClick={() => onEdit(p)}
-                  className="rounded border border-sky-600 px-3 py-1 text-xs text-sky-700 hover:bg-sky-50"
-                >
-                  Editar
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onEdit(p)}
+                    className="rounded border border-sky-600 px-3 py-1 text-xs text-sky-700 hover:bg-sky-50"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => onDelete(p)}
+                    className="rounded border border-red-600 px-3 py-1 text-xs text-red-700 hover:bg-red-50"
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

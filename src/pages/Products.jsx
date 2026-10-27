@@ -5,6 +5,7 @@ import {
   getCategories,
   createProduct,
   updateProduct,
+  deleteProduct,
 } from "../services/productService";
 import ProductFilters from "../components/products/ProductFilters";
 import ProductTable from "../components/products/ProductTable";
@@ -30,9 +31,11 @@ export default function Products() {
   // Estado del CRUD
   const [localCreated, setLocalCreated] = useState([]);
   const [localEdits, setLocalEdits] = useState({});
+  const [deletedProducts, setDeletedProducts] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [pendingEdit, setPendingEdit] = useState(null);
+  const [deletingProduct, setDeletingProduct] = useState(null);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [message, setMessage] = useState("");
@@ -139,17 +142,57 @@ export default function Products() {
     }
   };
 
-  // Los productos agregados se muestran arriba de la página 1,
-  // respetando el filtro de texto y de categoría activos
-  const matchingCreated = localCreated.filter(
-    (p) =>
-      (!category || p.category === category) &&
-      p.title.toLowerCase().includes(search.trim().toLowerCase())
-  );
+  // DELETE real y después se refleja en el estado local
+  const handleConfirmDelete = async () => {
+    setSaving(true);
+    setActionError("");
+    try {
+      try {
+        await deleteProduct(deletingProduct.id);
+      } catch (err) {
+        // Un producto agregado por ti no existe en DummyJSON (404): se ignora
+        if (!(deletingProduct.isLocal && err.status === 404)) throw err;
+      }
+
+      if (deletingProduct.isLocal) {
+        setLocalCreated((prev) =>
+          prev.filter((p) => p.id !== deletingProduct.id)
+        );
+      } else {
+        setDeletedProducts((prev) => [
+          ...prev,
+          {
+            id: deletingProduct.id,
+            title: deletingProduct.title,
+            category: deletingProduct.category,
+          },
+        ]);
+      }
+
+      setDeletingProduct(null);
+      setMessage("Producto eliminado correctamente");
+    } catch (err) {
+      setDeletingProduct(null);
+      setActionError(err.message || "No se pudo eliminar el producto");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Productos agregados y eliminados que cumplen los filtros activos
+  const matchesFilters = (p) =>
+    (!category || p.category === category) &&
+    p.title.toLowerCase().includes(search.trim().toLowerCase());
+
+  const matchingCreated = localCreated.filter(matchesFilters);
+  const matchingDeleted = deletedProducts.filter(matchesFilters);
+  const deletedIds = deletedProducts.map((p) => p.id);
+
+  // Los agregados se muestran arriba de la página 1
   const visibleCreated = page === 1 ? matchingCreated : [];
-  const rows = [...visibleCreated, ...products].map((p) =>
-    localEdits[p.id] ? { ...p, ...localEdits[p.id] } : p
-  );
+  const rows = [...visibleCreated, ...products]
+    .filter((p) => !deletedIds.includes(p.id))
+    .map((p) => (localEdits[p.id] ? { ...p, ...localEdits[p.id] } : p));
 
   return (
     <section className="space-y-4 p-6">
@@ -168,6 +211,10 @@ export default function Products() {
 
       {message && (
         <p className="rounded-lg bg-green-50 p-3 text-sm text-green-700">{message}</p>
+      )}
+
+      {actionError && !showForm && editingProduct === null && (
+        <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{actionError}</p>
       )}
 
       <ProductFilters
@@ -190,13 +237,17 @@ export default function Products() {
             setActionError("");
             setEditingProduct(p);
           }}
+          onDelete={(p) => {
+            setActionError("");
+            setDeletingProduct(p);
+          }}
         />
       )}
 
       <Pagination
         page={page}
         limit={limit}
-        total={total + matchingCreated.length}
+        total={total + matchingCreated.length - matchingDeleted.length}
         onPageChange={(p) => updateParams({ page: p })}
         onLimitChange={(l) => updateParams({ limit: l })}
       />
@@ -235,6 +286,18 @@ export default function Products() {
         loading={saving}
         onConfirm={handleConfirmEdit}
         onCancel={() => setPendingEdit(null)}
+      />
+
+      {/* Confirmación antes de eliminar */}
+      <ConfirmModal
+        open={deletingProduct !== null}
+        title="Eliminar producto"
+        message={`¿Seguro que quieres eliminar "${deletingProduct?.title ?? ""}"? Esta acción no se puede deshacer.`}
+        confirmText="Sí, eliminar"
+        danger
+        loading={saving}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeletingProduct(null)}
       />
     </section>
   );
