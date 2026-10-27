@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { getProducts, getCategories, createProduct } from "../services/productService";
+import {
+  getProducts,
+  getCategories,
+  createProduct,
+  updateProduct,
+} from "../services/productService";
 import ProductFilters from "../components/products/ProductFilters";
 import ProductTable from "../components/products/ProductTable";
 import Pagination, { LIMIT_OPTIONS } from "../components/products/Pagination";
 import ProductFormModal from "../components/products/ProductFormModal";
+import ConfirmModal from "../components/products/ConfirmModal";
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -23,7 +29,10 @@ export default function Products() {
 
   // Estado del CRUD
   const [localCreated, setLocalCreated] = useState([]);
+  const [localEdits, setLocalEdits] = useState({});
   const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [pendingEdit, setPendingEdit] = useState(null);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
   const [message, setMessage] = useState("");
@@ -97,17 +106,50 @@ export default function Products() {
     }
   };
 
+  // PUT real y después se refleja en el estado local
+  const handleConfirmEdit = async () => {
+    setSaving(true);
+    setActionError("");
+    try {
+      try {
+        await updateProduct(editingProduct.id, pendingEdit);
+      } catch (err) {
+        // Un producto agregado por ti no existe en DummyJSON (404): se ignora
+        if (!(editingProduct.isLocal && err.status === 404)) throw err;
+      }
+
+      if (editingProduct.isLocal) {
+        setLocalCreated((prev) =>
+          prev.map((p) =>
+            p.id === editingProduct.id ? { ...p, ...pendingEdit } : p
+          )
+        );
+      } else {
+        setLocalEdits((prev) => ({ ...prev, [editingProduct.id]: pendingEdit }));
+      }
+
+      setPendingEdit(null);
+      setEditingProduct(null);
+      setMessage("Producto actualizado correctamente");
+    } catch (err) {
+      setPendingEdit(null);
+      setActionError(err.message || "No se pudo actualizar el producto");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Los productos agregados se muestran arriba de la página 1,
   // respetando el filtro de texto y de categoría activos
-  const visibleCreated =
-    page === 1
-      ? localCreated.filter(
-          (p) =>
-            (!category || p.category === category) &&
-            p.title.toLowerCase().includes(search.trim().toLowerCase())
-        )
-      : [];
-  const rows = [...visibleCreated, ...products];
+  const matchingCreated = localCreated.filter(
+    (p) =>
+      (!category || p.category === category) &&
+      p.title.toLowerCase().includes(search.trim().toLowerCase())
+  );
+  const visibleCreated = page === 1 ? matchingCreated : [];
+  const rows = [...visibleCreated, ...products].map((p) =>
+    localEdits[p.id] ? { ...p, ...localEdits[p.id] } : p
+  );
 
   return (
     <section className="space-y-4 p-6">
@@ -141,16 +183,25 @@ export default function Products() {
         <p className="rounded-lg bg-red-50 p-4 text-red-700">{error}</p>
       )}
 
-      {!loading && !error && <ProductTable products={rows} />}
+      {!loading && !error && (
+        <ProductTable
+          products={rows}
+          onEdit={(p) => {
+            setActionError("");
+            setEditingProduct(p);
+          }}
+        />
+      )}
 
       <Pagination
         page={page}
         limit={limit}
-        total={total}
+        total={total + matchingCreated.length}
         onPageChange={(p) => updateParams({ page: p })}
         onLimitChange={(l) => updateParams({ limit: l })}
       />
 
+      {/* Modal: agregar */}
       <ProductFormModal
         open={showForm}
         title="Agregar producto"
@@ -160,6 +211,30 @@ export default function Products() {
         error={actionError}
         onSubmit={handleCreateProduct}
         onCancel={() => setShowForm(false)}
+      />
+
+      {/* Modal: editar */}
+      <ProductFormModal
+        open={editingProduct !== null}
+        title="Editar producto"
+        initialValues={editingProduct || undefined}
+        categories={categories}
+        submitText="Guardar cambios"
+        loading={saving}
+        error={actionError}
+        onSubmit={(data) => setPendingEdit(data)}
+        onCancel={() => setEditingProduct(null)}
+      />
+
+      {/* Confirmación antes de editar */}
+      <ConfirmModal
+        open={pendingEdit !== null}
+        title="Confirmar edición"
+        message={`¿Seguro que quieres guardar los cambios de "${editingProduct?.title ?? ""}"?`}
+        confirmText="Sí, guardar"
+        loading={saving}
+        onConfirm={handleConfirmEdit}
+        onCancel={() => setPendingEdit(null)}
       />
     </section>
   );

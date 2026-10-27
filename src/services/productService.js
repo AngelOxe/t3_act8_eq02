@@ -54,6 +54,7 @@ export async function getProducts(
   const data = await request(`${BASE_URL}?limit=${limit}&skip=${skip}`, signal);
   return { products: data.products, total: data.total };
 }
+
 // ---------- CRUD (DummyJSON simula las escrituras) ----------
 
 async function sendJson(url, method, body) {
@@ -63,7 +64,9 @@ async function sendJson(url, method, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    throw new Error(`Error ${res.status}: no se pudo completar la operación`);
+    const error = new Error(`Error ${res.status}: no se pudo completar la operación`);
+    error.status = res.status;
+    throw error;
   }
   return res.json();
 }
