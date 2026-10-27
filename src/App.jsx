@@ -1,12 +1,24 @@
-import { Activity, CalendarDays } from 'lucide-react'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import Products from './pages/Products'
+import DemoSection from './pages/DemoSection'
+import ProtectedRoute from './components/auth/ProtectedRoute'
+import AppLayout from './components/layout/AppLayout'
 
 export default function App() {
   return (
-    <main className="starter-screen">
-      <div className="starter-brand"><CalendarDays size={25} /> MediCita</div>
-      <h1>Actividad 8 · Equipo 02</h1>
-      <p>Base lista. Aquí integraremos primero el login y luego el dashboard.</p>
-      <div className="starter-note"><Activity size={18} /> React + Vite + Tailwind + Router</div>
-    </main>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="productos" element={<Products />} />
+          <Route path="pacientes" element={<DemoSection section="pacientes" />} />
+          <Route path="horarios" element={<DemoSection section="horarios" />} />
+        </Route>
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
