@@ -54,3 +54,34 @@ export async function getProducts(
   const data = await request(`${BASE_URL}?limit=${limit}&skip=${skip}`, signal);
   return { products: data.products, total: data.total };
 }
+
+// ---------- CRUD (DummyJSON simula las escrituras) ----------
+
+async function sendJson(url, method, body) {
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const error = new Error(`Error ${res.status}: no se pudo completar la operación`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.json();
+}
+
+// POST: agregar producto
+export function createProduct(product) {
+  return sendJson(`${BASE_URL}/add`, "POST", product);
+}
+
+// PUT: editar producto
+export function updateProduct(id, product) {
+  return sendJson(`${BASE_URL}/${id}`, "PUT", product);
+}
+
+// DELETE: eliminar producto
+export function deleteProduct(id) {
+  return sendJson(`${BASE_URL}/${id}`, "DELETE");
+}
