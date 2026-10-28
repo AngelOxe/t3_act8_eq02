@@ -1,8 +1,8 @@
 # MediCita — Actividad 8 — Equipo 02
 
 ## Integrantes
-RUIZ OSANTE ANGEL YIBAN
-ANTONIO VAZQUEZ KARLA GUADALUPE
+- RUIZ OSANTE ANGEL YIBAN
+- ANTONIO VAZQUEZ KARLA GUADALUPE
 
 Aplicación web en **React** para la gestión de un consultorio médico. Incluye inicio de sesión contra la API de **DummyJSON**, un dashboard con sidebar y navbar, y un catálogo de productos con búsqueda, filtro por categoría, paginación y operaciones CRUD, con los filtros sincronizados en la URL.
 
