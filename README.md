@@ -9,7 +9,7 @@ Aplicación web en **React** para la gestión de un consultorio médico. Incluye
 - **Sitio desplegado (VPS):** http://138.68.234.30/t3_act8_eq02/login
 - **Repositorio:** https://github.com/AngelOxe/t3_act8_eq02
 - **Diseño base:** mockup de Figma
-- **API externa:** [DummyJSON](https://dummyjson.com)
+- **API utilizada:** https://dummyjson.com/products
 
 ## Instalación y ejecución
 
