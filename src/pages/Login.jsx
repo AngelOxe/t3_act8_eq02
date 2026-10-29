@@ -59,7 +59,7 @@ export default function Login() {
         <div className="login-brand"><span className="brand-icon"><CalendarDays size={20}/></span> MediCita</div>
         <div className="login-center">
           <div className="login-form-wrap">
-            <span className="login-eyebrow">SISTEMA DE GESTIÓN MÉDICA</span>
+            <span className="login-eyebrow">SISTEMA DE GESTIÓN MÉDICA CAMBIO</span>
             <h1>Bienvenido a MediCita</h1>
             <p className="login-subtitle">Inicia sesión para administrar tu consultorio</p>
             <form onSubmit={handleSubmit} noValidate>
