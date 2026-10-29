@@ -103,7 +103,7 @@ export default function Login() {
         <div className="hero-orbit hero-orbit-two"/>
         <span className="hero-label"><HeartPulse size={13}/> HECHO PARA TU CONSULTORIO</span>
         <div className="hero-visual">
-          {/*<img src={`${import.meta.env.BASE_URL}images/doctor-figma-preview.jpg`} alt="Médico en un consultorio con tableta" />*/}
+          <img src={`${import.meta.env.BASE_URL}images/doctor-figma-preview.jpg`} alt="Médico en un consultorio con tableta" />
           <div className="appointment-popover">
             <span className="appointment-icon"><CalendarDays size={19}/></span>
             <span><strong>Tu agenda, al día</strong><small>Miércoles, 21 de octubre</small><em><i/> 12 citas para hoy <b>09:00</b></em></span>
