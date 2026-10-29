@@ -19,7 +19,7 @@ export default function Dashboard() {
   return (
     <section className="page-stack">
       <div className="dashboard-welcome">
-        <div><span className="eyebrow">RESUMEN GENERAL</span><h1>¡Hola, {user?.firstName}!</h1><p>Este es el resumen visual de tu consultorio MediCita.</p></div>
+        <div><span className="eyebrow">RESUMEN GENERAL</span><h1>¡Hola, {user?.firstName}!</h1><p>Este es el resumen visual de tu consultorio MediCita ejemplo.</p></div>
         <div className="welcome-seal"><ShieldCheck size={18}/> Sesión verificada con DummyJSON</div>
       </div>
       <div className="demo-warning">Los indicadores y las citas de este dashboard son datos ficticios para la presentación académica; el login sí utiliza una API real.</div>
